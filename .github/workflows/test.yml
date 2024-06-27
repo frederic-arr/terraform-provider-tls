@@ -1,80 +1,55 @@
-name: Test
+# Terraform Provider testing workflow.
+name: Tests
 
+# This GitHub action runs your tests for each pull request and push.
+# Optionally, you can turn it on using a schedule for regular testing.
 on:
   pull_request:
-    branches: [ main ]
     paths-ignore:
       - 'README.md'
-      - 'CHANGELOG.md'
-      - 'website/*'
   push:
-    branches: [ main ]
     paths-ignore:
       - 'README.md'
-      - 'CHANGELOG.md'
-      - 'website/*'
+
+# Testing only needs permissions to read the repository contents.
+permissions:
+  contents: read
 
 jobs:
-
+  # Ensure project builds before running testing matrix
   build:
     name: Build
     runs-on: ubuntu-latest
     timeout-minutes: 5
-
-    strategy:
-      matrix:
-        go-version: [ '1.21', '1.22' ]
-
     steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: actions/setup-go@cdcb36043654635271a94b9a6d1392de5bb323a7 # v5.0.1
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+      - run: go mod download
+      - run: go build -v .
+      - name: Run linters
+        uses: golangci/golangci-lint-action@a4f60bb28d35aeee14e6880718e0c85ff1882e64 # v6.0.1
+        with:
+          version: latest
 
-    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-    - uses: actions/setup-go@cdcb36043654635271a94b9a6d1392de5bb323a7 # v5.0.1
-      with:
-        go-version: ${{ matrix.go-version }}
-
-    - name: Run linters
-      uses: golangci/golangci-lint-action@a4f60bb28d35aeee14e6880718e0c85ff1882e64 # v6.0.1
-      with:
-        version: latest
-
-    - name: Generate
-      run: make generate
-
-    - name: Confirm no diff
-      run: |
-        git diff --compact-summary --exit-code || \
-          (echo "*** Unexpected differences after code generation. Run 'make generate' and commit."; exit 1)
-
-    - name: Build
-      run: make build
-
-  test:
-    name: 'Acc. Tests (OS: ${{ matrix.os }} / TF: ${{ matrix.terraform }})'
-    needs: build
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 15
-
-    strategy:
-      fail-fast: false
-      matrix:
-        os:
-          - macos-latest
-          - windows-latest
-          - ubuntu-latest
-        terraform: ${{ fromJSON(vars.TF_VERSIONS_PROTOCOL_V5) }}
-
+  generate:
+    runs-on: ubuntu-latest
     steps:
-
-    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-    - uses: actions/setup-go@cdcb36043654635271a94b9a6d1392de5bb323a7 # v5.0.1
-      with:
-        go-version-file: 'go.mod'
-
-    - name: Setup Terraform ${{ matrix.terraform }}
-      uses: hashicorp/setup-terraform@651471c36a6092792c552e8b1bef71e592b462d8 # v3.1.1
-      with:
-        terraform_version: ${{ matrix.terraform }}
-        terraform_wrapper: false
-
-    - name: Run acceptance test
-      run: make testacc
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: actions/setup-go@cdcb36043654635271a94b9a6d1392de5bb323a7 # v5.0.1
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+      # Temporarily download Terraform 1.8 prerelease for function documentation support.
+      # When Terraform 1.8.0 final is released, this can be removed.
+      - uses: hashicorp/setup-terraform@651471c36a6092792c552e8b1bef71e592b462d8 # v3.1.1
+        with:
+          terraform_version: '1.8.0-alpha20240216'
+          terraform_wrapper: false
+      - run: go generate ./...
+      - name: git diff
+        run: |
+          git diff --compact-summary --exit-code || \
+            (echo; echo "Unexpected difference in directories after code generation. Run 'go generate ./...' command and commit."; exit 1)
