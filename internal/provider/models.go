@@ -85,6 +85,7 @@ type selfSignedCertResourceModel struct {
 	Subject             types.List   `tfsdk:"subject"` //< certificateSubjectModel
 	ValidityPeriodHours types.Int64  `tfsdk:"validity_period_hours"`
 	AllowedUses         types.List   `tfsdk:"allowed_uses"`
+	DisableAutoRenewal  types.Bool   `tfsdk:"disable_auto_renewal"`
 	EarlyRenewalHours   types.Int64  `tfsdk:"early_renewal_hours"`
 	IsCACertificate     types.Bool   `tfsdk:"is_ca_certificate"`
 	SetSubjectKeyID     types.Bool   `tfsdk:"set_subject_key_id"`

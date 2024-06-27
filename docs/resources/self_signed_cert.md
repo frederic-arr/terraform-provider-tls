@@ -47,6 +47,7 @@ resource "tls_self_signed_cert" "example" {
 
 ### Optional
 
+- `disable_auto_renewal` (Boolean) Disables the automatic renewal of the certificate.
 - `dns_names` (List of String) List of DNS names for which a certificate is being requested (i.e. certificate subjects).
 - `early_renewal_hours` (Number) The resource will consider the certificate to have expired the given number of hours before its actual expiry time. This can be useful to deploy an updated certificate in advance of the expiration of the current certificate. However, the old certificate remains valid until its true expiration time, since this resource does not (and cannot) support certificate revocation. Also, this advance update can only be performed should the Terraform configuration be applied during the early renewal period. (default: `0`)
 - `ip_addresses` (List of String) List of IP addresses for which a certificate is being requested (i.e. certificate subjects).

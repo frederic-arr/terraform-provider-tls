@@ -124,6 +124,12 @@ func (r *selfSignedCertResource) Schema(_ context.Context, req resource.SchemaRe
 				},
 				Description: "List of URIs for which a certificate is being requested (i.e. certificate subjects).",
 			},
+			"disable_auto_renewal": schema.BoolAttribute{
+				Optional:    true,
+				Computed:    true,
+				Default:     booldefault.StaticBool(false),
+				Description: "Disables the automatic renewal of the certificate. ",
+			},
 			"early_renewal_hours": schema.Int64Attribute{
 				Optional: true,
 				Computed: true,

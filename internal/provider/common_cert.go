@@ -255,6 +255,17 @@ type commonCertificate struct {
 }
 
 func modifyPlanIfCertificateReadyForRenewal(ctx context.Context, req *resource.ModifyPlanRequest, res *resource.ModifyPlanResponse) {
+	// Retrieve `disable_auto_renewal`
+	disableAutoRenewalPath := path.Root("disable_auto_renewal")
+	var disableAutoRenewal bool
+	res.Diagnostics.Append(req.Plan.GetAttribute(ctx, disableAutoRenewalPath, &disableAutoRenewal)...)
+	if res.Diagnostics.HasError() {
+		return
+	}
+	if disableAutoRenewal {
+		return
+	}
+
 	// Retrieve `validity_end_time` and confirm is a known, non-null value
 	validityEndTimePath := path.Root("validity_end_time")
 	var validityEndTimeStr types.String
@@ -301,6 +312,17 @@ func modifyPlanIfCertificateReadyForRenewal(ctx context.Context, req *resource.M
 }
 
 func modifyStateIfCertificateReadyForRenewal(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	// Retrieve `early_renewal_hours`
+	disableAutoRenewalPath := path.Root("disable_auto_renewal")
+	var disableAutoRenewal bool
+	resp.Diagnostics.Append(req.State.GetAttribute(ctx, disableAutoRenewalPath, &disableAutoRenewal)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	if disableAutoRenewal {
+		return
+	}
+
 	// Retrieve `validity_end_time` and confirm is a known, non-null value
 	validityEndTimePath := path.Root("validity_end_time")
 	var validityEndTimeStr types.String
